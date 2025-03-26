@@ -4,7 +4,6 @@
 #include <raylib.h>
 #include <stdlib.h>
 
-
 #define ICOLOR CLITERAL(Color){0x6C, 0x6F, 0x93, 0xFF} // BLUE
 #define OCOLOR CLITERAL(Color){0xFA, 0xC2, 0x9A, 0xFF} // YELLOW
 #define TCOLOR CLITERAL(Color){0xBA, 0x77, 0xDB, 0xFF} // MAGENTA
@@ -46,6 +45,142 @@ Color tetromino_get_color(char tetromino_type) {
     return LCOLOR;
   default:
     return ICOLOR;
+  }
+}
+
+typedef struct {
+  int x, y;
+} Block;
+
+typedef struct {
+  Block a, b, c, d;
+} TetrominoLayout;
+
+// I
+static TetrominoLayout IUp = {{-1, 0}, {0, 0}, {1, 0}, {2, 0}};
+static TetrominoLayout IRight = {{0, -1}, {0, 0}, {0, 1}, {0, 2}};
+static TetrominoLayout IDown = {{-2, 0}, {-1, 0}, {0, 0}, {1, 0}};
+static TetrominoLayout ILeft = {{0, -2}, {0, -1}, {0, 0}, {0, 1}};
+// O
+static TetrominoLayout OUp = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+static TetrominoLayout ORight = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+static TetrominoLayout ODown = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+static TetrominoLayout OLeft = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+// T
+static TetrominoLayout TUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
+static TetrominoLayout TRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
+static TetrominoLayout TDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static TetrominoLayout TLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+// S
+static TetrominoLayout SUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
+static TetrominoLayout SRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
+static TetrominoLayout SDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static TetrominoLayout SLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+// Z
+static TetrominoLayout ZUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
+static TetrominoLayout ZRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
+static TetrominoLayout ZDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static TetrominoLayout ZLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+// J
+static TetrominoLayout JUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
+static TetrominoLayout JRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
+static TetrominoLayout JDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static TetrominoLayout JLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+// L
+static TetrominoLayout LUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
+static TetrominoLayout LRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
+static TetrominoLayout LDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static TetrominoLayout LLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+TetrominoLayout tetromino_get_layout(Tetromino *tetromino) {
+  if (tetromino->type == 'I') {
+    if (tetromino->orientation == 'U')
+      return IUp;
+    if (tetromino->orientation == 'R')
+      return IRight;
+    if (tetromino->orientation == 'D')
+      return IDown;
+    if (tetromino->orientation == 'L')
+      return ILeft;
+  }
+  if (tetromino->type == 'O') {
+    if (tetromino->orientation == 'U')
+      return OUp;
+    if (tetromino->orientation == 'R')
+      return ORight;
+    if (tetromino->orientation == 'D')
+      return ODown;
+    if (tetromino->orientation == 'L')
+      return OLeft;
+  }
+  if (tetromino->type == 'T') {
+    if (tetromino->orientation == 'U')
+      return TUp;
+    if (tetromino->orientation == 'R')
+      return TRight;
+    if (tetromino->orientation == 'D')
+      return TDown;
+    if (tetromino->orientation == 'L')
+      return TLeft;
+  }
+  if (tetromino->type == 'S') {
+    if (tetromino->orientation == 'U')
+      return SUp;
+    if (tetromino->orientation == 'R')
+      return SRight;
+    if (tetromino->orientation == 'D')
+      return SDown;
+    if (tetromino->orientation == 'L')
+      return SLeft;
+  }
+  if (tetromino->type == 'Z') {
+    if (tetromino->orientation == 'U')
+      return ZUp;
+    if (tetromino->orientation == 'R')
+      return ZRight;
+    if (tetromino->orientation == 'D')
+      return ZDown;
+    if (tetromino->orientation == 'L')
+      return ZLeft;
+  }
+  if (tetromino->type == 'J') {
+    if (tetromino->orientation == 'U')
+      return JUp;
+    if (tetromino->orientation == 'R')
+      return JRight;
+    if (tetromino->orientation == 'D')
+      return JDown;
+    if (tetromino->orientation == 'L')
+      return JLeft;
+  }
+  if (tetromino->type == 'L') {
+    if (tetromino->orientation == 'U')
+      return LUp;
+    if (tetromino->orientation == 'R')
+      return LRight;
+    if (tetromino->orientation == 'D')
+      return LDown;
+    if (tetromino->orientation == 'L')
+      return LLeft;
+  }
+
+  exit(1);
+}
+
+void tetromino_rotate_cw(Tetromino *tetromino) {
+  switch (tetromino->orientation) {
+  case 'U':
+    tetromino->orientation = 'R';
+    break;
+  case 'R':
+    tetromino->orientation = 'D';
+    break;
+  case 'D':
+    tetromino->orientation = 'L';
+    break;
+  case 'L':
+    tetromino->orientation = 'U';
+    break;
   }
 }
 

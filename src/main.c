@@ -4,20 +4,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define WINWIDTH 640
+#define WINHEIGHT 480
+#define TARGETFPS 60
+#define TITLE "Tetris"
 #define PADDING 10
 #define ROWS 20
 #define COLS 10
 #define CELLSIZE 20
+#define SPEEDBOOST 10
 
 int main(void) {
   srand(time(0));
   SetTraceLogCallback(CustomRaylibLogCallback);
 
-  InitWindow(640, 480, "Tetris");
+  InitWindow(WINWIDTH, WINHEIGHT, TITLE);
 
-  SetTargetFPS(60);
+  SetTargetFPS(TARGETFPS);
 
-  double fall_speed = 0.35;
+  double fall_speed = 0.5;
   double move_speed = 0.25;
   double last_fall_update = GetTime();
   double last_move_update = GetTime();
@@ -57,6 +62,10 @@ int main(void) {
       move_left = true;
     }
 
+    if (IsKeyPressed(KEY_UP)) {
+      tetromino_rotate_cw(&active);
+    }
+
     fall_faster = IsKeyDown(KEY_DOWN);
 
     if (!paused) {
@@ -84,7 +93,8 @@ int main(void) {
       }
 
       // Run interval updates
-      double final_fall_speed = fall_faster ? fall_speed / 2 : fall_speed;
+      double final_fall_speed =
+          fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
       if (now - last_fall_update > final_fall_speed) {
         last_fall_update = now;
 
@@ -108,10 +118,11 @@ int main(void) {
     DrawRectangleLines(PADDING, PADDING, CELLSIZE * COLS, CELLSIZE * ROWS,
                        BROWN);
 
-    for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
-      DrawRectangleLines(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE),
-                         CELLSIZE, CELLSIZE, GRAY);
-    }
+    // Draw cell outlines.
+    // for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
+    //   DrawRectangleLines(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE),
+    //                      CELLSIZE, CELLSIZE, GRAY);
+    // }
 
     // Draw placed tetrominoes.
     for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
@@ -126,9 +137,23 @@ int main(void) {
     }
 
     // Draw active tetromino.
-    DrawRectangle(PADDING + (active.x * CELLSIZE),
-                  PADDING + (active.y * CELLSIZE), CELLSIZE, CELLSIZE,
-                  tetromino_get_color(active.type));
+    TetrominoLayout layout = tetromino_get_layout(&active);
+    // Block a
+    DrawRectangle(PADDING + ((active.x + layout.a.x) * CELLSIZE),
+                  PADDING + ((active.y + layout.a.y) * CELLSIZE), CELLSIZE,
+                  CELLSIZE, tetromino_get_color(active.type));
+    // Block b
+    DrawRectangle(PADDING + ((active.x + layout.b.x) * CELLSIZE),
+                  PADDING + ((active.y + layout.b.y) * CELLSIZE), CELLSIZE,
+                  CELLSIZE, tetromino_get_color(active.type));
+    // Block c
+    DrawRectangle(PADDING + ((active.x + layout.c.x) * CELLSIZE),
+                  PADDING + ((active.y + layout.c.y) * CELLSIZE), CELLSIZE,
+                  CELLSIZE, tetromino_get_color(active.type));
+    // Block d
+    DrawRectangle(PADDING + ((active.x + layout.d.x) * CELLSIZE),
+                  PADDING + ((active.y + layout.d.y) * CELLSIZE), CELLSIZE,
+                  CELLSIZE, tetromino_get_color(active.type));
 
     EndDrawing();
   }
