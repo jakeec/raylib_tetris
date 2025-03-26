@@ -1,4 +1,5 @@
 #include "logger.h"
+#include "tetromino.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,31 +9,27 @@
 #define COLS 10
 #define CELLSIZE 20
 
-typedef struct {
-  // Tetromino types: I O T S Z J L
-  char type;
-  int x, y;
-  bool falling;
-  // U D L R
-  char orientation;
-} Tetromino;
-
 int main(void) {
+  srand(time(0));
   SetTraceLogCallback(CustomRaylibLogCallback);
 
   InitWindow(640, 480, "Tetris");
 
   SetTargetFPS(60);
 
-  double game_speed = 0.125;
-  double last_update = GetTime();
+  double fall_speed = 0.35;
+  double move_speed = 0.25;
+  double last_fall_update = GetTime();
+  double last_move_update = GetTime();
 
-  Tetromino tetrominos[(ROWS * COLS) / 4];
-  int tetrominos_count = 0;
-  tetrominos[tetrominos_count++] = (Tetromino){'I', 3, 3, true};
+  Tetromino active = tetromino_spawn();
+  Tetromino next = tetromino_spawn();
+
+  char grid[ROWS][COLS] = {0};
 
   bool move_right = false;
   bool move_left = false;
+  bool fall_faster = false;
 
   bool running = true;
   while (running) {
@@ -49,39 +46,45 @@ int main(void) {
       move_left = true;
     }
 
+    fall_faster = IsKeyDown(KEY_DOWN);
+
     // Run interval updates
     double now = GetTime();
-    if (now - last_update > game_speed) {
-      last_update = now;
-
-      Tetromino *active = &tetrominos[tetrominos_count - 1];
+    if (now - last_move_update > move_speed) {
+      last_move_update = now;
 
       if (move_right) {
-        active->x++;
+        active.x++;
         move_right = false;
       }
 
       if (move_left) {
-        active->x--;
+        active.x--;
         move_left = false;
       }
 
-      if (active->x > COLS - 1) {
-        active->x = COLS - 1;
+      if (active.x > COLS - 1) {
+        active.x = COLS - 1;
       }
 
-      if (active->x < 0) {
-        active->x = 0;
+      if (active.x < 0) {
+        active.x = 0;
+      }
+    }
+
+    double final_fall_speed = fall_faster ? fall_speed / 2 : fall_speed;
+    if (now - last_fall_update > final_fall_speed) {
+      last_fall_update = now;
+
+      // Collision
+      if (active.y >= ROWS - 1) {
+        active.y = ROWS - 1;
+        grid[active.y][active.x] = active.type;
+        active = next;
+        next = tetromino_spawn();
       }
 
-      if (active->falling) {
-        active->y++;
-      }
-
-      if (active->y >= ROWS - 1) {
-        active->y = ROWS - 1;
-        active->falling = false;
-      }
+      active.y++;
     }
 
     BeginDrawing();
@@ -96,23 +99,22 @@ int main(void) {
                          CELLSIZE, CELLSIZE, GRAY);
     }
 
-    // Draw tetrominos
-    for (int i = 0; i < tetrominos_count; i++) {
-      Tetromino this = tetrominos[i];
-      if (this.type == 'I') {
-        DrawRectangle(PADDING + (this.x * CELLSIZE),
-                      PADDING + (this.y * CELLSIZE), CELLSIZE, CELLSIZE, BLACK);
-        DrawRectangle(PADDING + (this.x * CELLSIZE),
-                      PADDING + ((this.y - 1) * CELLSIZE), CELLSIZE, CELLSIZE,
-                      BLACK);
-        DrawRectangle(PADDING + (this.x * CELLSIZE),
-                      PADDING + ((this.y - 2) * CELLSIZE), CELLSIZE, CELLSIZE,
-                      BLACK);
-        DrawRectangle(PADDING + (this.x * CELLSIZE),
-                      PADDING + ((this.y - 3) * CELLSIZE), CELLSIZE, CELLSIZE,
-                      BLACK);
-      }
+    // Draw placed tetrominoes.
+    for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
+      char cell = grid[y][x];
+      if (cell == '\0')
+        continue;
+
+      Color color = tetromino_get_color(cell);
+
+      DrawRectangle(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE),
+                    CELLSIZE, CELLSIZE, color);
     }
+
+    // Draw active tetromino.
+    DrawRectangle(PADDING + (active.x * CELLSIZE),
+                  PADDING + (active.y * CELLSIZE), CELLSIZE, CELLSIZE,
+                  tetromino_get_color(active.type));
 
     EndDrawing();
   }
