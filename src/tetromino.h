@@ -67,30 +67,30 @@ static TetrominoLayout ORight = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
 static TetrominoLayout ODown = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
 static TetrominoLayout OLeft = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
 // T
-static TetrominoLayout TUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
-static TetrominoLayout TRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static TetrominoLayout TDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static TetrominoLayout TLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+static TetrominoLayout TUp = {{0, 0}, {-1, 0}, {1, 0}, {0, 1}};
+static TetrominoLayout TRight = {{0, 0}, {0, -1}, {0, 1}, {-1, 0}};
+static TetrominoLayout TDown = {{0, 0}, {1, 0}, {-1, 0}, {0, -1}};
+static TetrominoLayout TLeft = {{0, 0}, {0, 1}, {0, -1}, {1, 0}};
 // S
-static TetrominoLayout SUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
-static TetrominoLayout SRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static TetrominoLayout SDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static TetrominoLayout SLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+static TetrominoLayout SUp = {{0, 0}, {1, 0}, {0, 1}, {-1, 1}};
+static TetrominoLayout SRight = {{0, 0}, {0, -1}, {1, 0}, {1, 1}};
+static TetrominoLayout SDown = {{0, 0}, {1, 0}, {0, 1}, {-1, 1}};
+static TetrominoLayout SLeft = {{0, 0}, {0, -1}, {1, 0}, {1, 1}};
 // Z
-static TetrominoLayout ZUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
-static TetrominoLayout ZRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static TetrominoLayout ZDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static TetrominoLayout ZLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+static TetrominoLayout ZUp = {{0, 0}, {-1, 0}, {0, 1}, {1, 1}};
+static TetrominoLayout ZRight = {{0, 0}, {0, -1}, {-1, 0}, {-1, 1}};
+static TetrominoLayout ZDown = {{0, 0}, {1, 0}, {0, -1}, {-1, -1}};
+static TetrominoLayout ZLeft = {{0, 0}, {0, 1}, {1, 0}, {1, -1}};
 // J
-static TetrominoLayout JUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
-static TetrominoLayout JRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static TetrominoLayout JDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static TetrominoLayout JLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+static TetrominoLayout JUp = {{0, 0}, {-1, 0}, {1, 0}, {1, 1}};
+static TetrominoLayout JRight = {{0, 0}, {0, -1}, {0, 1}, {-1, 1}};
+static TetrominoLayout JDown = {{0, 0}, {1, 0}, {-1, 0}, {-1, -1}};
+static TetrominoLayout JLeft = {{0, 0}, {0, -1}, {0, 1}, {1, -1}};
 // L
-static TetrominoLayout LUp = {{0, 0}, {-1, 1}, {0, 1}, {1, 1}};
-static TetrominoLayout LRight = {{0, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static TetrominoLayout LDown = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static TetrominoLayout LLeft = {{0, 0}, {1, 0}, {0, -1}, {0, 1}};
+static TetrominoLayout LUp = {{0, 0}, {1, 0}, {-1, 0}, {-1, 1}};
+static TetrominoLayout LRight = {{0, 0}, {0, 1}, {0, -1}, {-1, -1}};
+static TetrominoLayout LDown = {{0, 0}, {-1, 0}, {1, 0}, {1, -1}};
+static TetrominoLayout LLeft = {{0, 0}, {0, -1}, {0, 1}, {1, 1}};
 
 TetrominoLayout tetromino_get_layout(Tetromino *tetromino) {
   if (tetromino->type == 'I') {

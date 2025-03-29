@@ -35,6 +35,7 @@ int main(void) {
   bool move_right = false;
   bool move_left = false;
   bool fall_faster = false;
+  bool rotate_cw = false;
 
   bool running = true;
   bool paused = false;
@@ -63,7 +64,8 @@ int main(void) {
     }
 
     if (IsKeyPressed(KEY_UP)) {
-      tetromino_rotate_cw(&active);
+      rotate_cw = true;
+      // tetromino_rotate_cw(&active);
     }
 
     fall_faster = IsKeyDown(KEY_DOWN);
@@ -72,6 +74,11 @@ int main(void) {
       double now = GetTime();
       if (now - last_move_update > move_speed) {
         last_move_update = now;
+
+        if (rotate_cw) {
+          tetromino_rotate_cw(&active);
+          rotate_cw = false;
+        }
 
         if (move_right) {
           active.x++;
@@ -136,24 +143,26 @@ int main(void) {
                     CELLSIZE, CELLSIZE, color);
     }
 
+    // Draw debug info.
+    char debug_text[100];
+    sprintf(debug_text, "%c - %c", active.type, active.orientation);
+    DrawText(debug_text, 250, 200, 16, WHITE);
+
     // Draw active tetromino.
     TetrominoLayout layout = tetromino_get_layout(&active);
-    // Block a
+    Color color = tetromino_get_color(active.type);
     DrawRectangle(PADDING + ((active.x + layout.a.x) * CELLSIZE),
                   PADDING + ((active.y + layout.a.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, tetromino_get_color(active.type));
-    // Block b
+                  CELLSIZE, color);
     DrawRectangle(PADDING + ((active.x + layout.b.x) * CELLSIZE),
                   PADDING + ((active.y + layout.b.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, tetromino_get_color(active.type));
-    // Block c
+                  CELLSIZE, color);
     DrawRectangle(PADDING + ((active.x + layout.c.x) * CELLSIZE),
                   PADDING + ((active.y + layout.c.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, tetromino_get_color(active.type));
-    // Block d
+                  CELLSIZE, color);
     DrawRectangle(PADDING + ((active.x + layout.d.x) * CELLSIZE),
                   PADDING + ((active.y + layout.d.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, tetromino_get_color(active.type));
+                  CELLSIZE, color);
 
     EndDrawing();
   }
