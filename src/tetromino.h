@@ -27,6 +27,13 @@ Tetromino tetromino_spawn() {
   return (Tetromino){type, 'U', 4, 0};
 }
 
+Tetromino tetromino_clone(const Tetromino *src) {
+  return (Tetromino){.orientation = src->orientation,
+                     .type = src->type,
+                     .x = src->x,
+                     .y = src->y};
+}
+
 Color tetromino_get_color(char tetromino_type) {
   switch (tetromino_type) {
   case 'I':
@@ -165,6 +172,19 @@ TetrominoLayout tetromino_get_layout(Tetromino *tetromino) {
   }
 
   exit(1);
+}
+
+TetrominoLayout tetromino_get_absolute_layout(Tetromino *tetromino) {
+  TetrominoLayout layout = tetromino_get_layout(tetromino);
+  layout.a.x += tetromino->x;
+  layout.a.y += tetromino->y;
+  layout.b.x += tetromino->x;
+  layout.b.y += tetromino->y;
+  layout.c.x += tetromino->x;
+  layout.c.y += tetromino->y;
+  layout.d.x += tetromino->x;
+  layout.d.y += tetromino->y;
+  return layout;
 }
 
 void tetromino_rotate_cw(Tetromino *tetromino) {

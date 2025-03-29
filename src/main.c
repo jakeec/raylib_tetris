@@ -76,26 +76,89 @@ int main(void) {
         last_move_update = now;
 
         if (rotate_cw) {
-          tetromino_rotate_cw(&active);
+          Tetromino clone = tetromino_clone(&active);
+          tetromino_rotate_cw(&clone);
+          TetrominoLayout layout = tetromino_get_absolute_layout(&clone);
+          // TODO Decide whether to prevent invalid moves or use nudge
+          // strategies.
+          bool valid_move = true;
+          do {
+            if (layout.a.x > COLS - 1 || layout.a.x < 0) {
+              valid_move = false;
+              break;
+            }
+
+            if (layout.b.x > COLS - 1 || layout.b.x < 0) {
+              valid_move = false;
+              break;
+            }
+
+            if (layout.c.x > COLS - 1 || layout.c.x < 0) {
+              valid_move = false;
+              break;
+            }
+
+            if (layout.d.x > COLS - 1 || layout.d.x < 0) {
+              valid_move = false;
+              break;
+            }
+          } while (0);
+          if (valid_move) {
+            active = clone;
+          }
           rotate_cw = false;
         }
 
+        Tetromino clone = tetromino_clone(&active);
+        // Update clone.
         if (move_right) {
-          active.x++;
+          clone.x++;
           move_right = false;
         }
 
         if (move_left) {
-          active.x--;
+          clone.x--;
           move_left = false;
         }
 
-        if (active.x > COLS - 1) {
-          active.x = COLS - 1;
-        }
+        // Check if move was valid.
+        TetrominoLayout layout = tetromino_get_absolute_layout(&clone);
+        bool collision = false;
 
-        if (active.x < 0) {
-          active.x = 0;
+        do {
+          if (layout.a.x >= COLS || layout.b.x >= COLS || layout.c.x >= COLS ||
+              layout.d.x >= COLS) {
+            collision = true;
+          }
+
+          if (layout.a.x < 0 || layout.b.x < 0 || layout.c.x < 0 ||
+              layout.d.x < 0) {
+            collision = true;
+          }
+
+          if (grid[layout.a.y][layout.a.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.b.y][layout.b.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.c.y][layout.c.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.d.y][layout.d.x] != '\0') {
+            collision = true;
+            break;
+          }
+        } while (0);
+
+        if (!collision) {
+          active = clone;
         }
       }
 
@@ -106,14 +169,75 @@ int main(void) {
         last_fall_update = now;
 
         // Collision
-        if (active.y >= ROWS - 1) {
-          active.y = ROWS - 1;
-          grid[active.y][active.x] = active.type;
+        TetrominoLayout layout = tetromino_get_absolute_layout(&active);
+        bool collision = false;
+        do {
+          if (grid[layout.a.y + 1][layout.a.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.b.y + 1][layout.b.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.c.y + 1][layout.c.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (grid[layout.d.y + 1][layout.d.x] != '\0') {
+            collision = true;
+            break;
+          }
+
+          if (layout.a.y >= ROWS - 1 || layout.b.y >= ROWS - 1 ||
+              layout.c.y >= ROWS - 1 || layout.d.y >= ROWS - 1) {
+            collision = true;
+            break;
+          }
+        } while (0);
+
+        if (collision) {
+          grid[layout.a.y][layout.a.x] = active.type;
+          grid[layout.b.y][layout.b.x] = active.type;
+          grid[layout.c.y][layout.c.x] = active.type;
+          grid[layout.d.y][layout.d.x] = active.type;
           active = next;
           next = tetromino_spawn();
+        } else {
+          active.y++;
         }
 
-        active.y++;
+        // Check for completed lines.
+        int full_lines[4] = {-1};
+        int full_lines_count = 0;
+        for (size_t y = 0; y < ROWS; y++) {
+          bool full_line = true;
+          for (size_t x = 0; x < COLS; x++) {
+            if (grid[y][x] == '\0') {
+              full_line = false;
+            }
+          }
+          if (full_line) {
+            LDEBUG("FULL LINE");
+            full_lines[full_lines_count++] = y;
+          }
+        }
+
+        // Delete completed lines.
+        for (int i = 0; i < full_lines_count; i++) {
+          for (int x = 0; x < COLS; x++) {
+            grid[full_lines[i]][x] = '\0';
+          }
+        }
+
+        // Shift lines down.
+        if (full_lines_count > 0) {
+          for (int y = ROWS - 1; y >= 0; y--) {
+          }
+        }
       }
     }
 
@@ -149,20 +273,20 @@ int main(void) {
     DrawText(debug_text, 250, 200, 16, WHITE);
 
     // Draw active tetromino.
-    TetrominoLayout layout = tetromino_get_layout(&active);
+    TetrominoLayout layout = tetromino_get_absolute_layout(&active);
     Color color = tetromino_get_color(active.type);
-    DrawRectangle(PADDING + ((active.x + layout.a.x) * CELLSIZE),
-                  PADDING + ((active.y + layout.a.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, color);
-    DrawRectangle(PADDING + ((active.x + layout.b.x) * CELLSIZE),
-                  PADDING + ((active.y + layout.b.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, color);
-    DrawRectangle(PADDING + ((active.x + layout.c.x) * CELLSIZE),
-                  PADDING + ((active.y + layout.c.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, color);
-    DrawRectangle(PADDING + ((active.x + layout.d.x) * CELLSIZE),
-                  PADDING + ((active.y + layout.d.y) * CELLSIZE), CELLSIZE,
-                  CELLSIZE, color);
+    DrawRectangle(PADDING + ((layout.a.x) * CELLSIZE),
+                  PADDING + ((layout.a.y) * CELLSIZE), CELLSIZE, CELLSIZE,
+                  color);
+    DrawRectangle(PADDING + ((layout.b.x) * CELLSIZE),
+                  PADDING + ((layout.b.y) * CELLSIZE), CELLSIZE, CELLSIZE,
+                  color);
+    DrawRectangle(PADDING + ((layout.c.x) * CELLSIZE),
+                  PADDING + ((layout.c.y) * CELLSIZE), CELLSIZE, CELLSIZE,
+                  color);
+    DrawRectangle(PADDING + ((layout.d.x) * CELLSIZE),
+                  PADDING + ((layout.d.y) * CELLSIZE), CELLSIZE, CELLSIZE,
+                  color);
 
     EndDrawing();
   }
