@@ -14,6 +14,8 @@
 #define CELLSIZE 20
 #define SPEEDBOOST 10
 
+void draw_tetromino_cell(int x, int y, char tetromino_type);
+
 int main(void) {
   srand(time(0));
   SetTraceLogCallback(CustomRaylibLogCallback);
@@ -31,6 +33,8 @@ int main(void) {
   Tetromino next = tetromino_spawn();
 
   char grid[ROWS][COLS] = {0};
+
+  size_t score = 0;
 
   bool move_right = false;
   bool move_left = false;
@@ -163,6 +167,7 @@ int main(void) {
       }
 
       // Run interval updates
+      // TODO Failure state
       double final_fall_speed =
           fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
       if (now - last_fall_update > final_fall_speed) {
@@ -211,8 +216,8 @@ int main(void) {
         }
 
         // Check for completed lines.
-        int full_lines[4] = {-1};
-        int full_lines_count = 0;
+        int full_lines[ROWS] = {false};
+        int full_line_count = 0;
         for (size_t y = 0; y < ROWS; y++) {
           bool full_line = true;
           for (size_t x = 0; x < COLS; x++) {
@@ -222,21 +227,47 @@ int main(void) {
           }
           if (full_line) {
             LDEBUG("FULL LINE");
-            full_lines[full_lines_count++] = y;
+            full_lines[y] = true;
+            full_line_count++;
           }
         }
 
         // Delete completed lines.
-        for (int i = 0; i < full_lines_count; i++) {
-          for (int x = 0; x < COLS; x++) {
-            grid[full_lines[i]][x] = '\0';
+        for (int i = 0; i < ROWS; i++) {
+          if (full_lines[i]) {
+            for (int x = 0; x < COLS; x++) {
+              grid[i][x] = '\0';
+            }
           }
         }
 
         // Shift lines down.
-        if (full_lines_count > 0) {
-          for (int y = ROWS - 1; y >= 0; y--) {
+        for (int y = 0; y < ROWS; y++) {
+          if (full_lines[y]) {
+            // Shift all lines above down.
+            for (int ya = y; ya > 0; ya--) {
+              for (int x = 0; x < COLS; x++) {
+                grid[ya][x] = grid[ya - 1][x];
+              }
+            }
           }
+        }
+
+        // Award points.
+        // TODO Move points to defines.
+        switch (full_line_count) {
+        case 1:
+          score += 100;
+          break;
+        case 2:
+          score += 300;
+          break;
+        case 3:
+          score += 500;
+          break;
+        case 4:
+          score += 800;
+          break;
         }
       }
     }
@@ -255,39 +286,45 @@ int main(void) {
     //                      CELLSIZE, CELLSIZE, GRAY);
     // }
 
+    // Draw debug info.
+    char points_text[100];
+    sprintf(points_text, "SCORE: %d", score);
+    DrawText(points_text, 250, 200, 20, WHITE);
+
+    // Draw active tetromino.
+    TetrominoLayout layout = tetromino_get_absolute_layout(&active);
+    draw_tetromino_cell(layout.a.x, layout.a.y, active.type);
+    draw_tetromino_cell(layout.b.x, layout.b.y, active.type);
+    draw_tetromino_cell(layout.c.x, layout.c.y, active.type);
+    draw_tetromino_cell(layout.d.x, layout.d.y, active.type);
+
     // Draw placed tetrominoes.
     for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
       char cell = grid[y][x];
       if (cell == '\0')
         continue;
 
-      Color color = tetromino_get_color(cell);
-
-      DrawRectangle(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE),
-                    CELLSIZE, CELLSIZE, color);
+      draw_tetromino_cell(x, y, cell);
     }
-
-    // Draw debug info.
-    char debug_text[100];
-    sprintf(debug_text, "%c - %c", active.type, active.orientation);
-    DrawText(debug_text, 250, 200, 16, WHITE);
-
-    // Draw active tetromino.
-    TetrominoLayout layout = tetromino_get_absolute_layout(&active);
-    Color color = tetromino_get_color(active.type);
-    DrawRectangle(PADDING + ((layout.a.x) * CELLSIZE),
-                  PADDING + ((layout.a.y) * CELLSIZE), CELLSIZE, CELLSIZE,
-                  color);
-    DrawRectangle(PADDING + ((layout.b.x) * CELLSIZE),
-                  PADDING + ((layout.b.y) * CELLSIZE), CELLSIZE, CELLSIZE,
-                  color);
-    DrawRectangle(PADDING + ((layout.c.x) * CELLSIZE),
-                  PADDING + ((layout.c.y) * CELLSIZE), CELLSIZE, CELLSIZE,
-                  color);
-    DrawRectangle(PADDING + ((layout.d.x) * CELLSIZE),
-                  PADDING + ((layout.d.y) * CELLSIZE), CELLSIZE, CELLSIZE,
-                  color);
 
     EndDrawing();
   }
+}
+
+void draw_tetromino_cell(int x, int y, char tetromino_type) {
+  Color color = tetromino_get_color(tetromino_type);
+  int cx = PADDING + (x * CELLSIZE);
+  int cy = PADDING + (y * CELLSIZE);
+  int s = 4; // Shadow size.
+  // Shadow
+  DrawRectangle(cx + 4, cy + 4, CELLSIZE, CELLSIZE, (Color){0, 0, 0, 40});
+
+  int b = 4; // Bevel size
+  DrawRectangle(cx, cy, CELLSIZE, CELLSIZE, color);
+  DrawRectangle(cx, cy, CELLSIZE - b, CELLSIZE - b,
+                (Color){255, 255, 255, 100});
+  DrawRectangle(cx + b, cy + b, CELLSIZE - b, CELLSIZE - b,
+                (Color){0, 0, 0, 40});
+  DrawRectangle(cx + b, cy + b, CELLSIZE - 2 * b, CELLSIZE - 2 * b, color);
+  DrawRectangleLines(cx, cy, CELLSIZE, CELLSIZE, BLACK);
 }
