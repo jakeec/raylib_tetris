@@ -14,7 +14,8 @@
 #define CELLSIZE 20
 #define SPEEDBOOST 10
 
-void draw_tetromino_cell(int x, int y, char tetromino_type);
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type);
+void draw_grid_tetromino(Tetromino *tetromino);
 
 int main(void) {
   srand(time(0));
@@ -85,29 +86,49 @@ int main(void) {
           TetrominoLayout layout = tetromino_get_absolute_layout(&clone);
           // TODO Decide whether to prevent invalid moves or use nudge
           // strategies.
-          bool valid_move = true;
+          bool collision = false;
           do {
             if (layout.a.x > COLS - 1 || layout.a.x < 0) {
-              valid_move = false;
+              collision = true;
               break;
             }
 
             if (layout.b.x > COLS - 1 || layout.b.x < 0) {
-              valid_move = false;
+              collision = true;
               break;
             }
 
             if (layout.c.x > COLS - 1 || layout.c.x < 0) {
-              valid_move = false;
+              collision = true;
               break;
             }
 
             if (layout.d.x > COLS - 1 || layout.d.x < 0) {
-              valid_move = false;
+              collision = true;
+              break;
+            }
+
+            if (grid[layout.a.y][layout.a.x] != '\0') {
+              collision = true;
+              break;
+            }
+
+            if (grid[layout.b.y][layout.b.x] != '\0') {
+              collision = true;
+              break;
+            }
+
+            if (grid[layout.c.y][layout.c.x] != '\0') {
+              collision = true;
+              break;
+            }
+
+            if (grid[layout.d.y][layout.d.x] != '\0') {
+              collision = true;
               break;
             }
           } while (0);
-          if (valid_move) {
+          if (!collision) {
             active = clone;
           }
           rotate_cw = false;
@@ -286,17 +307,13 @@ int main(void) {
     //                      CELLSIZE, CELLSIZE, GRAY);
     // }
 
-    // Draw debug info.
+    // Draw score.
     char points_text[100];
     sprintf(points_text, "SCORE: %d", score);
     DrawText(points_text, 250, 200, 20, WHITE);
 
     // Draw active tetromino.
-    TetrominoLayout layout = tetromino_get_absolute_layout(&active);
-    draw_tetromino_cell(layout.a.x, layout.a.y, active.type);
-    draw_tetromino_cell(layout.b.x, layout.b.y, active.type);
-    draw_tetromino_cell(layout.c.x, layout.c.y, active.type);
-    draw_tetromino_cell(layout.d.x, layout.d.y, active.type);
+    draw_grid_tetromino(&active);
 
     // Draw placed tetrominoes.
     for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
@@ -304,20 +321,22 @@ int main(void) {
       if (cell == '\0')
         continue;
 
-      draw_tetromino_cell(x, y, cell);
+      draw_tetromino_cell(PADDING, PADDING, x, y, cell);
     }
+
+    // Draw next tetromino.
 
     EndDrawing();
   }
 }
 
-void draw_tetromino_cell(int x, int y, char tetromino_type) {
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type) {
   Color color = tetromino_get_color(tetromino_type);
-  int cx = PADDING + (x * CELLSIZE);
-  int cy = PADDING + (y * CELLSIZE);
+  int cx = px + (x * CELLSIZE);
+  int cy = py + (y * CELLSIZE);
   int s = 4; // Shadow size.
   // Shadow
-  DrawRectangle(cx + 4, cy + 4, CELLSIZE, CELLSIZE, (Color){0, 0, 0, 40});
+  DrawRectangle(cx + s, cy + s, CELLSIZE, CELLSIZE, (Color){0, 0, 0, 40});
 
   int b = 4; // Bevel size
   DrawRectangle(cx, cy, CELLSIZE, CELLSIZE, color);
@@ -327,4 +346,16 @@ void draw_tetromino_cell(int x, int y, char tetromino_type) {
                 (Color){0, 0, 0, 40});
   DrawRectangle(cx + b, cy + b, CELLSIZE - 2 * b, CELLSIZE - 2 * b, color);
   DrawRectangleLines(cx, cy, CELLSIZE, CELLSIZE, BLACK);
+}
+
+void draw_grid_tetromino(Tetromino *tetromino) {
+  TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
+  draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y,
+                      tetromino->type);
+  draw_tetromino_cell(PADDING, PADDING, layout.b.x, layout.b.y,
+                      tetromino->type);
+  draw_tetromino_cell(PADDING, PADDING, layout.c.x, layout.c.y,
+                      tetromino->type);
+  draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y,
+                      tetromino->type);
 }
