@@ -1,5 +1,6 @@
 #include "logger.h"
 #include "tetromino.h"
+#include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,7 @@ void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
                          bool shadow);
 void draw_grid_tetromino(Tetromino *tetromino);
 void draw_tetromino(Tetromino *tetromino, int px, int py);
+void draw_tetromino_3d(Tetromino *tetromino);
 
 int main(void) {
   srand(time(0));
@@ -27,6 +29,14 @@ int main(void) {
   InitWindow(WINWIDTH, WINHEIGHT, TITLE);
 
   SetTargetFPS(TARGETFPS);
+
+  float angle = 0.0f;
+  float radius = 7.0f;
+  Camera camera = {{0.0f, 1.0f, 10.0f},
+                   {0.0f, 1.0f, 0.0f},
+                   {0.0f, 2.0f, 0.0f},
+                   40.0,
+                   CAMERA_PERSPECTIVE};
 
   double fall_speed = 0.5;
   double move_speed = 0.25;
@@ -51,6 +61,7 @@ int main(void) {
 
   bool running = true;
   bool paused = false;
+
   while (running) {
     if (WindowShouldClose()) {
       running = false;
@@ -307,6 +318,17 @@ int main(void) {
 #define BACKGROUND CLITERAL(Color){0x2E, 0x30, 0x3E, 0xFF} // 2E303E
     ClearBackground(BACKGROUND);
 
+    // Make camera circle the tetromino.
+    angle += 0.01f;
+    camera.position.x = radius * cos(angle);
+    camera.position.z = radius * sin(angle);
+    // Draw background.
+    BeginMode3D(camera);
+    draw_tetromino_3d(&active);
+    EndMode3D();
+
+    DrawRectangle(0, 0, WINWIDTH, WINHEIGHT, (Color){0, 0, 0, 200});
+
     // Draw the grid
     DrawRectangleLines(PADDING, PADDING, CELLSIZE * COLS, CELLSIZE * ROWS,
                        BROWN);
@@ -346,8 +368,10 @@ int main(void) {
 
     for (int y = 1; y < ROWS + 1; y++) {
       draw_tetromino_cell(0, y * CELLSIZE, 0, 0, '\0', false);
-      draw_tetromino_cell((COLS + 1) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
-      draw_tetromino_cell((COLS + 23) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
+      draw_tetromino_cell((COLS + 1) * CELLSIZE, y * CELLSIZE, 0, 0, '\0',
+                          false);
+      draw_tetromino_cell((COLS + 23) * CELLSIZE, y * CELLSIZE, 0, 0, '\0',
+                          false);
     }
 
     // Draw next tetromino.
@@ -398,4 +422,26 @@ void draw_tetromino(Tetromino *tetromino, int px, int py) {
   draw_tetromino_cell(px, py, layout.b.x, layout.b.y, tetromino->type, true);
   draw_tetromino_cell(px, py, layout.c.x, layout.c.y, tetromino->type, true);
   draw_tetromino_cell(px, py, layout.d.x, layout.d.y, tetromino->type, true);
+}
+
+void draw_tetromino_3d(Tetromino *tetromino) {
+  TetrominoLayout layout = tetromino_get_layout_up(tetromino);
+  Color color = tetromino_get_color(tetromino->type);
+  float ox = 0.0, oy = 0.0;
+
+  Vector3 pos_a = {ox + layout.a.x, oy + layout.a.y, 0.0};
+  DrawCube(pos_a, 1.0f, 1.0f, 1.0f, color);
+  DrawCubeWires(pos_a, 1.0f, 1.0f, 1.0f, BLACK);
+
+  Vector3 pos_b = {ox + layout.b.x, oy + layout.b.y, 0.0};
+  DrawCube(pos_b, 1.0f, 1.0f, 1.0f, color);
+  DrawCubeWires(pos_b, 1.0f, 1.0f, 1.0f, BLACK);
+
+  Vector3 pos_c = {ox + layout.c.x, oy + layout.c.y, 0.0};
+  DrawCube(pos_c, 1.0f, 1.0f, 1.0f, color);
+  DrawCubeWires(pos_c, 1.0f, 1.0f, 1.0f, BLACK);
+
+  Vector3 pos_d = {ox + layout.d.x, oy + layout.d.y, 0.0};
+  DrawCube(pos_d, 1.0f, 1.0f, 1.0f, color);
+  DrawCubeWires(pos_d, 1.0f, 1.0f, 1.0f, BLACK);
 }

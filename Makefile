@@ -5,7 +5,7 @@ PROGRAM=tetris
 SRC_DIR=src
 BUILD_DIR=$(SRC_DIR)/build
 DEBUG_DIR=$(BUILD_DIR)/debug
-LFLAGS=-lraylib
+LFLAGS=-lraylib -lm
 
 .PHONY: clean
 

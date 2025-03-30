@@ -176,6 +176,12 @@ TetrominoLayout tetromino_get_layout(Tetromino *tetromino) {
   exit(1);
 }
 
+TetrominoLayout tetromino_get_layout_up(Tetromino *tetromino) {
+  Tetromino clone = tetromino_clone(tetromino);
+  clone.orientation = 'U';
+  return tetromino_get_layout(&clone);
+}
+
 TetrominoLayout tetromino_get_absolute_layout(Tetromino *tetromino) {
   TetrominoLayout layout = tetromino_get_layout(tetromino);
   layout.a.x += tetromino->x;
