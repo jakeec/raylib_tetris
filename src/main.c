@@ -21,6 +21,7 @@ void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
 void draw_grid_tetromino(Tetromino *tetromino);
 void draw_tetromino(Tetromino *tetromino, int px, int py);
 void draw_tetromino_3d(Tetromino *tetromino);
+bool check_tetromino_collision(Tetromino *tetromino, char grid[ROWS][COLS]);
 
 int main(void) {
   srand(time(0));
@@ -101,51 +102,7 @@ int main(void) {
         if (rotate_cw) {
           Tetromino clone = tetromino_clone(&active);
           tetromino_rotate_cw(&clone);
-          TetrominoLayout layout = tetromino_get_absolute_layout(&clone);
-          // TODO Decide whether to prevent invalid moves or use nudge
-          // strategies.
-          bool collision = false;
-          do {
-            if (layout.a.x > COLS - 1 || layout.a.x < 0) {
-              collision = true;
-              break;
-            }
-
-            if (layout.b.x > COLS - 1 || layout.b.x < 0) {
-              collision = true;
-              break;
-            }
-
-            if (layout.c.x > COLS - 1 || layout.c.x < 0) {
-              collision = true;
-              break;
-            }
-
-            if (layout.d.x > COLS - 1 || layout.d.x < 0) {
-              collision = true;
-              break;
-            }
-
-            if (grid[layout.a.y][layout.a.x] != '\0') {
-              collision = true;
-              break;
-            }
-
-            if (grid[layout.b.y][layout.b.x] != '\0') {
-              collision = true;
-              break;
-            }
-
-            if (grid[layout.c.y][layout.c.x] != '\0') {
-              collision = true;
-              break;
-            }
-
-            if (grid[layout.d.y][layout.d.x] != '\0') {
-              collision = true;
-              break;
-            }
-          } while (0);
+          bool collision = check_tetromino_collision(&clone, grid);
           if (!collision) {
             active = clone;
           }
@@ -165,41 +122,7 @@ int main(void) {
         }
 
         // Check if move was valid.
-        TetrominoLayout layout = tetromino_get_absolute_layout(&clone);
-        bool collision = false;
-
-        do {
-          if (layout.a.x >= COLS || layout.b.x >= COLS || layout.c.x >= COLS ||
-              layout.d.x >= COLS) {
-            collision = true;
-          }
-
-          if (layout.a.x < 0 || layout.b.x < 0 || layout.c.x < 0 ||
-              layout.d.x < 0) {
-            collision = true;
-          }
-
-          if (grid[layout.a.y][layout.a.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.b.y][layout.b.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.c.y][layout.c.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.d.y][layout.d.x] != '\0') {
-            collision = true;
-            break;
-          }
-        } while (0);
-
+        bool collision = check_tetromino_collision(&clone, grid);
         if (!collision) {
           active = clone;
         }
@@ -213,37 +136,12 @@ int main(void) {
         last_fall_update = now;
 
         // Collision
-        TetrominoLayout layout = tetromino_get_absolute_layout(&active);
-        bool collision = false;
-        do {
-          if (grid[layout.a.y + 1][layout.a.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.b.y + 1][layout.b.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.c.y + 1][layout.c.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (grid[layout.d.y + 1][layout.d.x] != '\0') {
-            collision = true;
-            break;
-          }
-
-          if (layout.a.y >= ROWS - 1 || layout.b.y >= ROWS - 1 ||
-              layout.c.y >= ROWS - 1 || layout.d.y >= ROWS - 1) {
-            collision = true;
-            break;
-          }
-        } while (0);
+        Tetromino clone = tetromino_clone(&active);
+        clone.y++;
+        bool collision = check_tetromino_collision(&clone, grid);
 
         if (collision) {
+          TetrominoLayout layout = tetromino_get_absolute_layout(&active);
           grid[layout.a.y][layout.a.x] = active.type;
           grid[layout.b.y][layout.b.x] = active.type;
           grid[layout.c.y][layout.c.x] = active.type;
@@ -444,4 +342,27 @@ void draw_tetromino_3d(Tetromino *tetromino) {
   Vector3 pos_d = {ox + layout.d.x, oy + layout.d.y, 0.0};
   DrawCube(pos_d, 1.0f, 1.0f, 1.0f, color);
   DrawCubeWires(pos_d, 1.0f, 1.0f, 1.0f, BLACK);
+}
+
+// TODO Decide whether to prevent invalid moves or use nudge
+// strategies.
+bool check_tetromino_collision(Tetromino *tetromino, char grid[ROWS][COLS]) {
+  TetrominoLayout l = tetromino_get_absolute_layout(tetromino);
+
+  if (l.a.x >= COLS || l.b.x >= COLS || l.c.x >= COLS || l.d.x >= COLS)
+    return true;
+  if (l.a.x < 0 || l.b.x < 0 || l.c.x < 0 || l.d.x < 0)
+    return true;
+  if (grid[l.a.y][l.a.x] != '\0')
+    return true;
+  if (grid[l.b.y][l.b.x] != '\0')
+    return true;
+  if (grid[l.c.y][l.c.x] != '\0')
+    return true;
+  if (grid[l.d.y][l.d.x] != '\0')
+    return true;
+  if (l.a.y >= ROWS || l.b.y >= ROWS || l.c.y >= ROWS || l.d.y >= ROWS)
+    return true;
+
+  return false;
 }
