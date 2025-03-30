@@ -39,6 +39,8 @@ int main(void) {
                    40.0,
                    CAMERA_PERSPECTIVE};
 
+restart:
+
   double fall_speed = 0.5;
   double move_speed = 0.25;
   double last_fall_update = GetTime();
@@ -62,6 +64,7 @@ int main(void) {
 
   bool running = true;
   bool paused = false;
+  bool game_over = false;
 
   while (running) {
     if (WindowShouldClose()) {
@@ -76,6 +79,12 @@ int main(void) {
     } else {
       if (IsKeyPressed(KEY_P)) {
         paused = true;
+      }
+    }
+
+    if (game_over) {
+      if (IsKeyPressed(KEY_R)) {
+        goto restart;
       }
     }
 
@@ -94,7 +103,7 @@ int main(void) {
 
     fall_faster = IsKeyDown(KEY_DOWN);
 
-    if (!paused) {
+    if (!paused && !game_over) {
       double now = GetTime();
       if (now - last_move_update > move_speed) {
         last_move_update = now;
@@ -147,6 +156,11 @@ int main(void) {
           grid[layout.c.y][layout.c.x] = active.type;
           grid[layout.d.y][layout.d.x] = active.type;
           active = next[0];
+          bool collision = check_tetromino_collision(&active, grid);
+          if (collision) {
+            game_over = true;
+            continue;
+          }
           for (int i = 0; i < NEXT_COUNT - 1; i++) {
             next[i] = next[i + 1];
           }
@@ -245,6 +259,15 @@ int main(void) {
     sprintf(points_text, "SCORE: %d", display_score);
     DrawText(points_text, 265, 125, 30, (Color){0, 0, 0, 150});
     DrawText(points_text, 260, 120, 30, WHITE);
+
+    if (game_over) {
+      char *game_over_text = "Game over.";
+      char *restart_text = "Press R to restart.";
+      DrawText(game_over_text, 265, 225, 30, (Color){0, 0, 0, 150});
+      DrawText(game_over_text, 260, 220, 30, WHITE);
+      DrawText(restart_text, 265, 275, 30, (Color){0, 0, 0, 150});
+      DrawText(restart_text, 260, 270, 30, WHITE);
+    }
 
     // Draw active tetromino.
     draw_grid_tetromino(&active);
