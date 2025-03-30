@@ -4,18 +4,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WINWIDTH 640
+#define WINWIDTH 680
 #define WINHEIGHT 480
 #define TARGETFPS 60
 #define TITLE "Tetris"
-#define PADDING 10
-#define ROWS 20
+#define PADDING 20
+#define ROWS 22
 #define COLS 10
 #define CELLSIZE 20
 #define SPEEDBOOST 10
+#define NEXT_COUNT 4
 
-void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type);
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
+                         bool shadow);
 void draw_grid_tetromino(Tetromino *tetromino);
+void draw_tetromino(Tetromino *tetromino, int px, int py);
 
 int main(void) {
   srand(time(0));
@@ -31,11 +34,15 @@ int main(void) {
   double last_move_update = GetTime();
 
   Tetromino active = tetromino_spawn();
-  Tetromino next = tetromino_spawn();
+  Tetromino next[NEXT_COUNT] = {0};
+  for (int i = 0; i < NEXT_COUNT; i++) {
+    next[i] = tetromino_spawn();
+  }
 
   char grid[ROWS][COLS] = {0};
 
   size_t score = 0;
+  size_t display_score = 0;
 
   bool move_right = false;
   bool move_left = false;
@@ -230,8 +237,11 @@ int main(void) {
           grid[layout.b.y][layout.b.x] = active.type;
           grid[layout.c.y][layout.c.x] = active.type;
           grid[layout.d.y][layout.d.x] = active.type;
-          active = next;
-          next = tetromino_spawn();
+          active = next[0];
+          for (int i = 0; i < NEXT_COUNT - 1; i++) {
+            next[i] = next[i + 1];
+          }
+          next[NEXT_COUNT - 1] = tetromino_spawn();
         } else {
           active.y++;
         }
@@ -308,9 +318,13 @@ int main(void) {
     // }
 
     // Draw score.
+    if (display_score < score) {
+      display_score += 1;
+    }
     char points_text[100];
-    sprintf(points_text, "SCORE: %d", score);
-    DrawText(points_text, 250, 200, 20, WHITE);
+    sprintf(points_text, "SCORE: %d", display_score);
+    DrawText(points_text, 265, 125, 30, (Color){0, 0, 0, 150});
+    DrawText(points_text, 260, 120, 30, WHITE);
 
     // Draw active tetromino.
     draw_grid_tetromino(&active);
@@ -321,22 +335,40 @@ int main(void) {
       if (cell == '\0')
         continue;
 
-      draw_tetromino_cell(PADDING, PADDING, x, y, cell);
+      draw_tetromino_cell(PADDING, PADDING, x, y, cell, true);
+    }
+
+    // Draw grid border.
+    for (int x = 0; x < COLS + 24; x++) {
+      draw_tetromino_cell(0, 0, x, 0, '\0', false);
+      draw_tetromino_cell(0, (ROWS + 1) * CELLSIZE, x, 0, '\0', false);
+    }
+
+    for (int y = 1; y < ROWS + 1; y++) {
+      draw_tetromino_cell(0, y * CELLSIZE, 0, 0, '\0', false);
+      draw_tetromino_cell((COLS + 1) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
+      draw_tetromino_cell((COLS + 23) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
     }
 
     // Draw next tetromino.
+    for (int i = 0; i < NEXT_COUNT; i++) {
+      draw_tetromino(&next[i], (14 * CELLSIZE) + (i * 100), CELLSIZE * 2);
+    }
 
     EndDrawing();
   }
 }
 
-void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type) {
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
+                         bool shadow) {
   Color color = tetromino_get_color(tetromino_type);
   int cx = px + (x * CELLSIZE);
   int cy = py + (y * CELLSIZE);
-  int s = 4; // Shadow size.
+
   // Shadow
-  DrawRectangle(cx + s, cy + s, CELLSIZE, CELLSIZE, (Color){0, 0, 0, 40});
+  int s = 4; // Shadow size.
+  if (shadow)
+    DrawRectangle(cx + s, cy + s, CELLSIZE, CELLSIZE, (Color){0, 0, 0, 40});
 
   int b = 4; // Bevel size
   DrawRectangle(cx, cy, CELLSIZE, CELLSIZE, color);
@@ -350,12 +382,20 @@ void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type) {
 
 void draw_grid_tetromino(Tetromino *tetromino) {
   TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
-  draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y,
-                      tetromino->type);
-  draw_tetromino_cell(PADDING, PADDING, layout.b.x, layout.b.y,
-                      tetromino->type);
-  draw_tetromino_cell(PADDING, PADDING, layout.c.x, layout.c.y,
-                      tetromino->type);
-  draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y,
-                      tetromino->type);
+  draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y, tetromino->type,
+                      true);
+  draw_tetromino_cell(PADDING, PADDING, layout.b.x, layout.b.y, tetromino->type,
+                      true);
+  draw_tetromino_cell(PADDING, PADDING, layout.c.x, layout.c.y, tetromino->type,
+                      true);
+  draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y, tetromino->type,
+                      true);
+}
+
+void draw_tetromino(Tetromino *tetromino, int px, int py) {
+  TetrominoLayout layout = tetromino_get_layout(tetromino);
+  draw_tetromino_cell(px, py, layout.a.x, layout.a.y, tetromino->type, true);
+  draw_tetromino_cell(px, py, layout.b.x, layout.b.y, tetromino->type, true);
+  draw_tetromino_cell(px, py, layout.c.x, layout.c.y, tetromino->type, true);
+  draw_tetromino_cell(px, py, layout.d.x, layout.d.y, tetromino->type, true);
 }

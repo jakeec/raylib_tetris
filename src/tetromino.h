@@ -50,6 +50,8 @@ Color tetromino_get_color(char tetromino_type) {
     return JCOLOR;
   case 'L':
     return LCOLOR;
+  case '\0':
+    return (Color){150, 150, 150, 255};
   default:
     return ICOLOR;
   }
