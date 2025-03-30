@@ -18,7 +18,10 @@
 
 void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
                          bool shadow);
+void draw_tetromino_preview_cell(int px, int py, int x, int y,
+                                 char tetromino_type);
 void draw_grid_tetromino(Tetromino *tetromino);
+void draw_grid_tetromino_preview(Tetromino *tetromino);
 void draw_tetromino(Tetromino *tetromino, int px, int py);
 void draw_tetromino_3d(Tetromino *tetromino);
 bool check_tetromino_collision(Tetromino *tetromino, char grid[ROWS][COLS]);
@@ -292,6 +295,16 @@ restart:
       draw_tetromino_cell(PADDING, PADDING, x, y, cell, true);
     }
 
+    // Draw preview.
+    Tetromino preview = tetromino_clone(&active);
+    bool collision = false;
+    while (!collision) {
+      preview.y++;
+      collision = check_tetromino_collision(&preview, grid);
+    }
+    preview.y--;
+    draw_grid_tetromino_preview(&preview);
+
     // Draw grid border.
     for (int x = 0; x < COLS + 24; x++) {
       draw_tetromino_cell(0, 0, x, 0, '\0', false);
@@ -306,7 +319,7 @@ restart:
                           false);
     }
 
-    // Draw next tetromino.
+    // Draw next tetrominoes.
     for (int i = 0; i < NEXT_COUNT; i++) {
       draw_tetromino(&next[i], (14 * CELLSIZE) + (i * 100), CELLSIZE * 2);
     }
@@ -336,6 +349,15 @@ void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
   DrawRectangleLines(cx, cy, CELLSIZE, CELLSIZE, BLACK);
 }
 
+void draw_tetromino_preview_cell(int px, int py, int x, int y,
+                                 char tetromino_type) {
+  Color color = tetromino_get_color(tetromino_type);
+  int cx = px + (x * CELLSIZE);
+  int cy = py + (y * CELLSIZE);
+
+  DrawRectangleLines(cx, cy, CELLSIZE, CELLSIZE, color);
+}
+
 void draw_grid_tetromino(Tetromino *tetromino) {
   TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
   draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y, tetromino->type,
@@ -346,6 +368,18 @@ void draw_grid_tetromino(Tetromino *tetromino) {
                       true);
   draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y, tetromino->type,
                       true);
+}
+
+void draw_grid_tetromino_preview(Tetromino *tetromino) {
+  TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.a.x, layout.a.y,
+                              tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.b.x, layout.b.y,
+                              tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.c.x, layout.c.y,
+                              tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.d.x, layout.d.y,
+                              tetromino->type);
 }
 
 void draw_tetromino(Tetromino *tetromino, int px, int py) {
