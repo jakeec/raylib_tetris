@@ -4,6 +4,7 @@
 
 ## TODO
 
-- Failure state.
 - Ability to hold a tetromino.
 - Preview of where the tetromino will land.
+- Sound.
+- Stats.

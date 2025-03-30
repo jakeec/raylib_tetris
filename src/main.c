@@ -105,6 +105,11 @@ restart:
 
     if (!paused && !game_over) {
       double now = GetTime();
+
+      if (display_score < score) {
+        display_score += 1;
+      }
+
       if (now - last_move_update > move_speed) {
         last_move_update = now;
 
@@ -252,9 +257,6 @@ restart:
     // }
 
     // Draw score.
-    if (display_score < score) {
-      display_score += 1;
-    }
     char points_text[100];
     sprintf(points_text, "SCORE: %d", display_score);
     DrawText(points_text, 265, 125, 30, (Color){0, 0, 0, 150});
@@ -263,10 +265,19 @@ restart:
     if (game_over) {
       char *game_over_text = "Game over.";
       char *restart_text = "Press R to restart.";
-      DrawText(game_over_text, 265, 225, 30, (Color){0, 0, 0, 150});
-      DrawText(game_over_text, 260, 220, 30, WHITE);
-      DrawText(restart_text, 265, 275, 30, (Color){0, 0, 0, 150});
-      DrawText(restart_text, 260, 270, 30, WHITE);
+      DrawText(game_over_text, 265, 175, 30, (Color){0, 0, 0, 150});
+      DrawText(game_over_text, 260, 170, 30, WHITE);
+      DrawText(restart_text, 265, 225, 30, (Color){0, 0, 0, 150});
+      DrawText(restart_text, 260, 220, 30, WHITE);
+    }
+
+    if (paused) {
+      char *paused_text = "Paused.";
+      char *resume_text = "Press P to resume.";
+      DrawText(paused_text, 265, 175, 30, (Color){0, 0, 0, 150});
+      DrawText(paused_text, 260, 170, 30, WHITE);
+      DrawText(resume_text, 265, 225, 30, (Color){0, 0, 0, 150});
+      DrawText(resume_text, 260, 220, 30, WHITE);
     }
 
     // Draw active tetromino.
