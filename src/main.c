@@ -15,11 +15,10 @@
 #define CELLSIZE 20
 #define SPEEDBOOST 10
 #define NEXT_COUNT 4
+#define BACKGROUND CLITERAL(Color){0x2E, 0x30, 0x3E, 0xFF}
 
-void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
-                         bool shadow);
-void draw_tetromino_preview_cell(int px, int py, int x, int y,
-                                 char tetromino_type);
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type, bool shadow);
+void draw_tetromino_preview_cell(int px, int py, int x, int y, char tetromino_type);
 void draw_grid_tetromino(Tetromino *tetromino);
 void draw_grid_tetromino_preview(Tetromino *tetromino);
 void draw_tetromino(Tetromino *tetromino, int px, int py);
@@ -36,11 +35,12 @@ int main(void) {
 
   float angle = 0.0f;
   float radius = 7.0f;
-  Camera camera = {{0.0f, 1.0f, 10.0f},
-                   {0.0f, 1.0f, 0.0f},
-                   {0.0f, 2.0f, 0.0f},
-                   40.0,
-                   CAMERA_PERSPECTIVE};
+  Camera camera;
+  camera.position = (Vector3){0.0f, 1.0f, 10.0f};
+  camera.target = (Vector3){0.0f, 1.0f, 0.0f};
+  camera.up = (Vector3){0.0f, 2.0f, 0.0f};
+  camera.fovy = 40.0f;
+  camera.projection = CAMERA_PERSPECTIVE;
 
 restart:
 
@@ -153,8 +153,7 @@ restart:
       // Run interval updates
       // TODO Failure state
       double fall_speed = powf((0.8 - ((level - 1) * 0.007)), level - 1);
-      double final_fall_speed =
-          fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
+      double final_fall_speed = fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
       if (now - last_fall_update > final_fall_speed || instant_drop) {
         last_fall_update = now;
 
@@ -255,7 +254,6 @@ restart:
     }
 
     BeginDrawing();
-#define BACKGROUND CLITERAL(Color){0x2E, 0x30, 0x3E, 0xFF} // 2E303E
     ClearBackground(BACKGROUND);
 
     // Make camera circle the tetromino.
@@ -270,8 +268,7 @@ restart:
     DrawRectangle(0, 0, WINWIDTH, WINHEIGHT, (Color){0, 0, 0, 200});
 
     // Draw the grid
-    DrawRectangleLines(PADDING, PADDING, CELLSIZE * COLS, CELLSIZE * ROWS,
-                       BROWN);
+    DrawRectangleLines(PADDING, PADDING, CELLSIZE * COLS, CELLSIZE * ROWS, BROWN);
 
     // Draw cell outlines.
     // for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
@@ -344,10 +341,8 @@ restart:
 
     for (int y = 1; y < ROWS + 1; y++) {
       draw_tetromino_cell(0, y * CELLSIZE, 0, 0, '\0', false);
-      draw_tetromino_cell((COLS + 1) * CELLSIZE, y * CELLSIZE, 0, 0, '\0',
-                          false);
-      draw_tetromino_cell((COLS + 23) * CELLSIZE, y * CELLSIZE, 0, 0, '\0',
-                          false);
+      draw_tetromino_cell((COLS + 1) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
+      draw_tetromino_cell((COLS + 23) * CELLSIZE, y * CELLSIZE, 0, 0, '\0', false);
     }
 
     // Draw next tetrominoes.
@@ -359,8 +354,7 @@ restart:
   }
 }
 
-void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
-                         bool shadow) {
+void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type, bool shadow) {
   Color color = tetromino_get_color(tetromino_type);
   int cx = px + (x * CELLSIZE);
   int cy = py + (y * CELLSIZE);
@@ -372,16 +366,13 @@ void draw_tetromino_cell(int px, int py, int x, int y, char tetromino_type,
 
   int b = 4; // Bevel size
   DrawRectangle(cx, cy, CELLSIZE, CELLSIZE, color);
-  DrawRectangle(cx, cy, CELLSIZE - b, CELLSIZE - b,
-                (Color){255, 255, 255, 100});
-  DrawRectangle(cx + b, cy + b, CELLSIZE - b, CELLSIZE - b,
-                (Color){0, 0, 0, 40});
+  DrawRectangle(cx, cy, CELLSIZE - b, CELLSIZE - b, (Color){255, 255, 255, 100});
+  DrawRectangle(cx + b, cy + b, CELLSIZE - b, CELLSIZE - b, (Color){0, 0, 0, 40});
   DrawRectangle(cx + b, cy + b, CELLSIZE - 2 * b, CELLSIZE - 2 * b, color);
   DrawRectangleLines(cx, cy, CELLSIZE, CELLSIZE, BLACK);
 }
 
-void draw_tetromino_preview_cell(int px, int py, int x, int y,
-                                 char tetromino_type) {
+void draw_tetromino_preview_cell(int px, int py, int x, int y, char tetromino_type) {
   Color color = tetromino_get_color(tetromino_type);
   int cx = px + (x * CELLSIZE);
   int cy = py + (y * CELLSIZE);
@@ -391,26 +382,18 @@ void draw_tetromino_preview_cell(int px, int py, int x, int y,
 
 void draw_grid_tetromino(Tetromino *tetromino) {
   TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
-  draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y, tetromino->type,
-                      true);
-  draw_tetromino_cell(PADDING, PADDING, layout.b.x, layout.b.y, tetromino->type,
-                      true);
-  draw_tetromino_cell(PADDING, PADDING, layout.c.x, layout.c.y, tetromino->type,
-                      true);
-  draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y, tetromino->type,
-                      true);
+  draw_tetromino_cell(PADDING, PADDING, layout.a.x, layout.a.y, tetromino->type, true);
+  draw_tetromino_cell(PADDING, PADDING, layout.b.x, layout.b.y, tetromino->type, true);
+  draw_tetromino_cell(PADDING, PADDING, layout.c.x, layout.c.y, tetromino->type, true);
+  draw_tetromino_cell(PADDING, PADDING, layout.d.x, layout.d.y, tetromino->type, true);
 }
 
 void draw_grid_tetromino_preview(Tetromino *tetromino) {
   TetrominoLayout layout = tetromino_get_absolute_layout(tetromino);
-  draw_tetromino_preview_cell(PADDING, PADDING, layout.a.x, layout.a.y,
-                              tetromino->type);
-  draw_tetromino_preview_cell(PADDING, PADDING, layout.b.x, layout.b.y,
-                              tetromino->type);
-  draw_tetromino_preview_cell(PADDING, PADDING, layout.c.x, layout.c.y,
-                              tetromino->type);
-  draw_tetromino_preview_cell(PADDING, PADDING, layout.d.x, layout.d.y,
-                              tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.a.x, layout.a.y, tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.b.x, layout.b.y, tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.c.x, layout.c.y, tetromino->type);
+  draw_tetromino_preview_cell(PADDING, PADDING, layout.d.x, layout.d.y, tetromino->type);
 }
 
 void draw_tetromino(Tetromino *tetromino, int px, int py) {

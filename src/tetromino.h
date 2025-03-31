@@ -28,10 +28,7 @@ Tetromino tetromino_spawn() {
 }
 
 Tetromino tetromino_clone(const Tetromino *src) {
-  return (Tetromino){.orientation = src->orientation,
-                     .type = src->type,
-                     .x = src->x,
-                     .y = src->y};
+  return (Tetromino){.orientation = src->orientation, .type = src->type, .x = src->x, .y = src->y};
 }
 
 Color tetromino_get_color(char tetromino_type) {

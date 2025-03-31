@@ -39,17 +39,15 @@ void get_current_time(char formatted_time[20]) {
   strftime(formatted_time, 20, "%Y-%m-%d %H:%M:%S", local_time);
 }
 
-#define LOG(stream, fmt, ...)                                                  \
-  {                                                                            \
-    char ftime[20];                                                            \
-    get_current_time(ftime);                                                   \
-    fprintf(stream, _GRY "%s " _RST fmt, ftime, ##__VA_ARGS__, __FILE__,       \
-            __LINE__);                                                         \
+#define LOG(stream, fmt, ...)                                                                                          \
+  {                                                                                                                    \
+    char ftime[20];                                                                                                    \
+    get_current_time(ftime);                                                                                           \
+    fprintf(stream, _GRY "%s " _RST fmt, ftime, ##__VA_ARGS__, __FILE__, __LINE__);                                    \
   }
 
 #if LOG_LEVEL >= 0
-#define LERROR(fmt, ...)                                                       \
-  LOG(stderr, _FMT(_RED, _LBL_ERR, fmt " (%s:%d)"), ##__VA_ARGS__)
+#define LERROR(fmt, ...) LOG(stderr, _FMT(_RED, _LBL_ERR, fmt " (%s:%d)"), ##__VA_ARGS__)
 #else
 #define LERROR(fmt, ...)
 #endif
