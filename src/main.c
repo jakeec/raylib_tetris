@@ -44,8 +44,6 @@ int main(void) {
 
 restart:
 
-  double fall_speed = 0.5;
-  double move_speed = 0.25;
   double last_fall_update = GetTime();
   double last_move_update = GetTime();
 
@@ -57,6 +55,9 @@ restart:
 
   char grid[ROWS][COLS] = {0};
 
+  double move_speed = 0.125;
+  int level = 1;
+  int lines_cleared = 0;
   size_t score = 0;
   size_t display_score = 0;
 
@@ -64,6 +65,7 @@ restart:
   bool move_left = false;
   bool fall_faster = false;
   bool rotate_cw = false;
+  bool instant_drop = false;
 
   bool running = true;
   bool paused = false;
@@ -101,17 +103,20 @@ restart:
 
     if (IsKeyPressed(KEY_UP)) {
       rotate_cw = true;
-      // tetromino_rotate_cw(&active);
+    }
+
+    if (IsKeyPressed(KEY_SPACE)) {
+      instant_drop = true;
     }
 
     fall_faster = IsKeyDown(KEY_DOWN);
 
+    if (display_score < score) {
+      display_score += 1;
+    }
+
     if (!paused && !game_over) {
       double now = GetTime();
-
-      if (display_score < score) {
-        display_score += 1;
-      }
 
       if (now - last_move_update > move_speed) {
         last_move_update = now;
@@ -147,15 +152,25 @@ restart:
 
       // Run interval updates
       // TODO Failure state
+      double fall_speed = powf((0.8 - ((level - 1) * 0.007)), level - 1);
       double final_fall_speed =
           fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
-      if (now - last_fall_update > final_fall_speed) {
+      if (now - last_fall_update > final_fall_speed || instant_drop) {
         last_fall_update = now;
 
         // Collision
         Tetromino clone = tetromino_clone(&active);
         clone.y++;
         bool collision = check_tetromino_collision(&clone, grid);
+
+        while (instant_drop && !collision) {
+          clone.y++;
+          collision = check_tetromino_collision(&clone, grid);
+        }
+        if (instant_drop) {
+          active = clone;
+          active.y--;
+        }
 
         if (collision) {
           TetrominoLayout layout = tetromino_get_absolute_layout(&active);
@@ -176,6 +191,8 @@ restart:
         } else {
           active.y++;
         }
+
+        instant_drop = false;
 
         // Check for completed lines.
         int full_lines[ROWS] = {false};
@@ -231,6 +248,9 @@ restart:
           score += 800;
           break;
         }
+
+        lines_cleared += full_line_count;
+        level = (lines_cleared / 10) + 1;
       }
     }
 
@@ -264,6 +284,17 @@ restart:
     sprintf(points_text, "SCORE: %d", display_score);
     DrawText(points_text, 265, 125, 30, (Color){0, 0, 0, 150});
     DrawText(points_text, 260, 120, 30, WHITE);
+
+    if (!game_over && !paused) {
+      char level_text[10];
+      sprintf(level_text, "LEVEL: %d", level);
+      DrawText(level_text, 265, 175, 26, (Color){0, 0, 0, 150});
+      DrawText(level_text, 260, 170, 26, WHITE);
+      char lines_cleared_text[10];
+      sprintf(lines_cleared_text, "LINES: %d", lines_cleared);
+      DrawText(lines_cleared_text, 265, 215, 26, (Color){0, 0, 0, 150});
+      DrawText(lines_cleared_text, 260, 210, 26, WHITE);
+    }
 
     if (game_over) {
       char *game_over_text = "Game over.";
