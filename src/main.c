@@ -28,9 +28,7 @@ bool check_tetromino_collision(Tetromino *tetromino, char grid[ROWS][COLS]);
 int main(void) {
   srand(time(0));
   SetTraceLogCallback(CustomRaylibLogCallback);
-
   InitWindow(WINWIDTH, WINHEIGHT, TITLE);
-
   SetTargetFPS(TARGETFPS);
 
   float angle = 0.0f;
@@ -48,6 +46,7 @@ restart:
   double last_move_update = GetTime();
 
   Tetromino active = tetromino_spawn();
+  TetrominoController controller = {(float)active.x};
   Tetromino next[NEXT_COUNT] = {0};
   for (int i = 0; i < NEXT_COUNT; i++) {
     next[i] = tetromino_spawn();
@@ -93,14 +92,6 @@ restart:
       }
     }
 
-    if (IsKeyDown(KEY_RIGHT)) {
-      move_right = true;
-    }
-
-    if (IsKeyDown(KEY_LEFT)) {
-      move_left = true;
-    }
-
     if (IsKeyPressed(KEY_UP)) {
       rotate_cw = true;
     }
@@ -115,144 +106,152 @@ restart:
       display_score += 1;
     }
 
-    if (!paused && !game_over) {
-      double now = GetTime();
+    double now = GetTime();
 
-      if (now - last_move_update > move_speed) {
-        last_move_update = now;
+    if (game_over || paused)
+      goto render;
 
-        if (rotate_cw) {
-          Tetromino clone = tetromino_clone(&active);
-          tetromino_rotate_cw(&clone);
-          bool collision = check_tetromino_collision(&clone, grid);
-          if (!collision) {
-            active = clone;
-          }
-          rotate_cw = false;
-        }
+    if (rotate_cw) {
+      Tetromino clone = tetromino_clone(&active);
+      tetromino_rotate_cw(&clone);
+      bool collision = check_tetromino_collision(&clone, grid);
+      if (!collision) {
+        active = clone;
+      }
+      rotate_cw = false;
+    }
 
-        Tetromino clone = tetromino_clone(&active);
-        // Update clone.
-        if (move_right) {
-          clone.x++;
-          move_right = false;
-        }
-
-        if (move_left) {
-          clone.x--;
-          move_left = false;
-        }
-
-        // Check if move was valid.
-        bool collision = check_tetromino_collision(&clone, grid);
-        if (!collision) {
-          active = clone;
-        }
+    {
+      float x_before = controller.x;
+      if (IsKeyPressed(KEY_RIGHT)) {
+        controller.x = roundf(controller.x) + 1;
+      } else if (IsKeyDown(KEY_RIGHT)) {
+        controller.x += move_speed;
       }
 
-      // Run interval updates
-      // TODO Failure state
-      double fall_speed = powf((0.8 - ((level - 1) * 0.007)), level - 1);
-      double final_fall_speed = fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
-      if (now - last_fall_update > final_fall_speed || instant_drop) {
-        last_fall_update = now;
+      if (IsKeyPressed(KEY_LEFT)) {
+        controller.x = roundf(controller.x) - 1;
+      } else if (IsKeyDown(KEY_LEFT)) {
+        controller.x -= move_speed;
+      }
 
-        // Collision
-        Tetromino clone = tetromino_clone(&active);
-        clone.y++;
-        bool collision = check_tetromino_collision(&clone, grid);
+      Tetromino clone = tetromino_clone(&active);
+      // Update clone.
+      clone.x = (int)roundf(controller.x);
 
-        while (instant_drop && !collision) {
-          clone.y++;
-          collision = check_tetromino_collision(&clone, grid);
-        }
-        if (instant_drop) {
-          active = clone;
-          active.y--;
-        }
-
-        if (collision) {
-          TetrominoLayout layout = tetromino_get_absolute_layout(&active);
-          grid[layout.a.y][layout.a.x] = active.type;
-          grid[layout.b.y][layout.b.x] = active.type;
-          grid[layout.c.y][layout.c.x] = active.type;
-          grid[layout.d.y][layout.d.x] = active.type;
-          active = next[0];
-          bool collision = check_tetromino_collision(&active, grid);
-          if (collision) {
-            game_over = true;
-            continue;
-          }
-          for (int i = 0; i < NEXT_COUNT - 1; i++) {
-            next[i] = next[i + 1];
-          }
-          next[NEXT_COUNT - 1] = tetromino_spawn();
-        } else {
-          active.y++;
-        }
-
-        instant_drop = false;
-
-        // Check for completed lines.
-        int full_lines[ROWS] = {false};
-        int full_line_count = 0;
-        for (size_t y = 0; y < ROWS; y++) {
-          bool full_line = true;
-          for (size_t x = 0; x < COLS; x++) {
-            if (grid[y][x] == '\0') {
-              full_line = false;
-            }
-          }
-          if (full_line) {
-            LDEBUG("FULL LINE");
-            full_lines[y] = true;
-            full_line_count++;
-          }
-        }
-
-        // Delete completed lines.
-        for (int i = 0; i < ROWS; i++) {
-          if (full_lines[i]) {
-            for (int x = 0; x < COLS; x++) {
-              grid[i][x] = '\0';
-            }
-          }
-        }
-
-        // Shift lines down.
-        for (int y = 0; y < ROWS; y++) {
-          if (full_lines[y]) {
-            // Shift all lines above down.
-            for (int ya = y; ya > 0; ya--) {
-              for (int x = 0; x < COLS; x++) {
-                grid[ya][x] = grid[ya - 1][x];
-              }
-            }
-          }
-        }
-
-        // Award points.
-        // TODO Move points to defines.
-        switch (full_line_count) {
-        case 1:
-          score += 100;
-          break;
-        case 2:
-          score += 300;
-          break;
-        case 3:
-          score += 500;
-          break;
-        case 4:
-          score += 800;
-          break;
-        }
-
-        lines_cleared += full_line_count;
-        level = (lines_cleared / 10) + 1;
+      // Check if move was valid.
+      bool collision = check_tetromino_collision(&clone, grid);
+      if (!collision) {
+        active = clone;
+      } else {
+        LDEBUG("Before: %f", controller.x);
+        controller.x = x_before;
+        LDEBUG("After: %f", controller.x);
       }
     }
 
+    double fall_speed = powf((0.8 - ((level - 1) * 0.007)), level - 1);
+    double final_fall_speed = fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
+    if (now - last_fall_update > final_fall_speed || instant_drop) {
+      last_fall_update = now;
+
+      // Collision
+      Tetromino clone = tetromino_clone(&active);
+      clone.y++;
+      bool collision = check_tetromino_collision(&clone, grid);
+
+      while (instant_drop && !collision) {
+        clone.y++;
+        collision = check_tetromino_collision(&clone, grid);
+      }
+      if (instant_drop) {
+        active = clone;
+        active.y--;
+      }
+
+      if (collision) {
+        TetrominoLayout layout = tetromino_get_absolute_layout(&active);
+        grid[layout.a.y][layout.a.x] = active.type;
+        grid[layout.b.y][layout.b.x] = active.type;
+        grid[layout.c.y][layout.c.x] = active.type;
+        grid[layout.d.y][layout.d.x] = active.type;
+        active = next[0];
+        controller.x = (float)active.x;
+        bool collision = check_tetromino_collision(&active, grid);
+        if (collision) {
+          game_over = true;
+          continue;
+        }
+        for (int i = 0; i < NEXT_COUNT - 1; i++) {
+          next[i] = next[i + 1];
+        }
+        next[NEXT_COUNT - 1] = tetromino_spawn();
+      } else {
+        active.y++;
+      }
+
+      instant_drop = false;
+
+      // Check for completed lines.
+      int full_lines[ROWS] = {false};
+      int full_line_count = 0;
+      for (size_t y = 0; y < ROWS; y++) {
+        bool full_line = true;
+        for (size_t x = 0; x < COLS; x++) {
+          if (grid[y][x] == '\0') {
+            full_line = false;
+          }
+        }
+        if (full_line) {
+          LDEBUG("FULL LINE");
+          full_lines[y] = true;
+          full_line_count++;
+        }
+      }
+
+      // Delete completed lines.
+      for (int i = 0; i < ROWS; i++) {
+        if (full_lines[i]) {
+          for (int x = 0; x < COLS; x++) {
+            grid[i][x] = '\0';
+          }
+        }
+      }
+
+      // Shift lines down.
+      for (int y = 0; y < ROWS; y++) {
+        if (full_lines[y]) {
+          // Shift all lines above down.
+          for (int ya = y; ya > 0; ya--) {
+            for (int x = 0; x < COLS; x++) {
+              grid[ya][x] = grid[ya - 1][x];
+            }
+          }
+        }
+      }
+
+      // Award points.
+      // TODO Move points to defines.
+      switch (full_line_count) {
+      case 1:
+        score += 100;
+        break;
+      case 2:
+        score += 300;
+        break;
+      case 3:
+        score += 500;
+        break;
+      case 4:
+        score += 800;
+        break;
+      }
+
+      lines_cleared += full_line_count;
+      level = (lines_cleared / 10) + 1;
+    }
+
+  render:
     BeginDrawing();
     ClearBackground(BACKGROUND);
 

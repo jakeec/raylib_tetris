@@ -20,6 +20,11 @@ typedef struct {
   int x, y;
 } Tetromino;
 
+// Precision representation of tetromino position for smoother input.  
+typedef struct {
+  float x;
+} TetrominoController;
+
 char _types[7] = {'I', 'O', 'T', 'S', 'Z', 'J', 'L'};
 
 Tetromino tetromino_spawn() {
