@@ -9,10 +9,12 @@
 #define WINHEIGHT 480
 #define TARGETFPS 60
 #define TITLE "Tetris"
-#define PADDING 20
 #define ROWS 22
 #define COLS 10
-#define CELLSIZE 20
+#define CELLSIZE WINWIDTH / 34
+#define PADDING CELLSIZE
+#define FONTSIZELARGE WINWIDTH / 22
+#define FONTSIZEMED WINWIDTH / 24
 #define SPEEDBOOST 10
 #define NEXT_COUNT 4
 #define BACKGROUND CLITERAL(Color){0x2E, 0x30, 0x3E, 0xFF}
@@ -87,6 +89,7 @@ restart:
     }
 
     if (game_over) {
+      display_score = score;
       if (IsKeyPressed(KEY_R)) {
         goto restart;
       }
@@ -144,9 +147,7 @@ restart:
       if (!collision) {
         active = clone;
       } else {
-        LDEBUG("Before: %f", controller.x);
         controller.x = x_before;
-        LDEBUG("After: %f", controller.x);
       }
     }
 
@@ -203,7 +204,6 @@ restart:
           }
         }
         if (full_line) {
-          LDEBUG("FULL LINE");
           full_lines[y] = true;
           full_line_count++;
         }
@@ -269,45 +269,47 @@ restart:
     // Draw the grid
     DrawRectangleLines(PADDING, PADDING, CELLSIZE * COLS, CELLSIZE * ROWS, BROWN);
 
-    // Draw cell outlines.
-    // for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
-    //   DrawRectangleLines(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE),
-    //                      CELLSIZE, CELLSIZE, GRAY);
-    // }
+#ifdef GRID
+    // Draw grid cell outlines.
+    for (int x = 0, y = 0; y < ROWS; x = (x + 1) % COLS, x == 0 && y++) {
+      DrawRectangleLines(PADDING + (x * CELLSIZE), PADDING + (y * CELLSIZE), CELLSIZE, CELLSIZE,
+                         (Color){155, 155, 155, 30});
+    }
+#endif
 
     // Draw score.
     char points_text[100];
     sprintf(points_text, "SCORE: %d", display_score);
-    DrawText(points_text, 265, 125, 30, (Color){0, 0, 0, 150});
-    DrawText(points_text, 260, 120, 30, WHITE);
+    DrawText(points_text, WINWIDTH / 2, 125, FONTSIZELARGE, (Color){0, 0, 0, 150});
+    DrawText(points_text, WINWIDTH / 2, 120, FONTSIZELARGE, WHITE);
 
     if (!game_over && !paused) {
       char level_text[10];
       sprintf(level_text, "LEVEL: %d", level);
-      DrawText(level_text, 265, 175, 26, (Color){0, 0, 0, 150});
-      DrawText(level_text, 260, 170, 26, WHITE);
+      DrawText(level_text, WINWIDTH / 2, 175, FONTSIZEMED, (Color){0, 0, 0, 150});
+      DrawText(level_text, WINWIDTH / 2, 170, FONTSIZEMED, WHITE);
       char lines_cleared_text[10];
       sprintf(lines_cleared_text, "LINES: %d", lines_cleared);
-      DrawText(lines_cleared_text, 265, 215, 26, (Color){0, 0, 0, 150});
-      DrawText(lines_cleared_text, 260, 210, 26, WHITE);
+      DrawText(lines_cleared_text, WINWIDTH / 2, 215, FONTSIZEMED, (Color){0, 0, 0, 150});
+      DrawText(lines_cleared_text, WINWIDTH / 2, 210, FONTSIZEMED, WHITE);
     }
 
     if (game_over) {
       char *game_over_text = "Game over.";
       char *restart_text = "Press R to restart.";
-      DrawText(game_over_text, 265, 175, 30, (Color){0, 0, 0, 150});
-      DrawText(game_over_text, 260, 170, 30, WHITE);
-      DrawText(restart_text, 265, 225, 30, (Color){0, 0, 0, 150});
-      DrawText(restart_text, 260, 220, 30, WHITE);
+      DrawText(game_over_text, WINWIDTH / 2, 175, FONTSIZELARGE, (Color){0, 0, 0, 150});
+      DrawText(game_over_text, WINWIDTH / 2, 170, FONTSIZELARGE, WHITE);
+      DrawText(restart_text, WINWIDTH / 2, 225, FONTSIZELARGE, (Color){0, 0, 0, 150});
+      DrawText(restart_text, WINWIDTH / 2, 220, FONTSIZELARGE, WHITE);
     }
 
     if (paused) {
       char *paused_text = "Paused.";
       char *resume_text = "Press P to resume.";
-      DrawText(paused_text, 265, 175, 30, (Color){0, 0, 0, 150});
-      DrawText(paused_text, 260, 170, 30, WHITE);
-      DrawText(resume_text, 265, 225, 30, (Color){0, 0, 0, 150});
-      DrawText(resume_text, 260, 220, 30, WHITE);
+      DrawText(paused_text, WINWIDTH / 2, 175, FONTSIZELARGE, (Color){0, 0, 0, 150});
+      DrawText(paused_text, WINWIDTH / 2, 170, FONTSIZELARGE, WHITE);
+      DrawText(resume_text, WINWIDTH / 2, 225, FONTSIZELARGE, (Color){0, 0, 0, 150});
+      DrawText(resume_text, WINWIDTH / 2, 220, FONTSIZELARGE, WHITE);
     }
 
     // Draw active tetromino.
@@ -346,7 +348,7 @@ restart:
 
     // Draw next tetrominoes.
     for (int i = 0; i < NEXT_COUNT; i++) {
-      draw_tetromino(&next[i], (14 * CELLSIZE) + (i * 100), CELLSIZE * 2);
+      draw_tetromino(&next[i], (14 * CELLSIZE) + (i * CELLSIZE * 5), CELLSIZE * 2);
     }
 
     EndDrawing();

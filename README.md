@@ -7,5 +7,3 @@
 - Ability to hold a tetromino.
 - Sound.
 - Stats.
-- Levels.
-- Instant drop.
