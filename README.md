@@ -6,6 +6,8 @@
 
 To play the game clone this repo and run `make run`.
 
+_Warning_ The game plays beeps when the tetrominos fall so make sure your volume isn't too loud. You can mute the sounds with the `M` key.
+
 ### Controls
 
 * Move with `left` and `right` keys.

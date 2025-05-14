@@ -37,17 +37,17 @@ bool check_tetromino_collision(Tetromino *tetromino, char grid[ROWS][COLS]);
 int main(void) {
   srand(time(0));
   SetTraceLogCallback(CustomRaylibLogCallback);
-  InitWindow(WINWIDTH, WINHEIGHT, TITLE);
+  InitWindow(WINWIDTH, WINHEIGHT, "🔊 "TITLE);
   SetTargetFPS(TARGETFPS);
 
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(MAX_SAMPLES_PER_UPDATE);
 
-  Wave bwoop_wave   = GenBwoopWave(600.0f, 300.0f, 0.25f, 44100);
+  Wave bwoop_wave   = GenBwoopWave(300.0f, 200.0f, 0.25f, 44100);
   Sound sound_bwoop = LoadSoundFromWave(bwoop_wave);
   UnloadWave(bwoop_wave);
 
-  Wave instant_drop_wave   = GenBwoopWave(600.0f, 100.0f, 0.5f, 44100);
+  Wave instant_drop_wave   = GenBwoopWave(400.0f, 100.0f, 0.5f, 44100);
   Sound sound_instant_drop = LoadSoundFromWave(instant_drop_wave);
   UnloadWave(instant_drop_wave);
 
@@ -89,6 +89,7 @@ restart:
   bool running   = true;
   bool paused    = false;
   bool game_over = false;
+  bool muted     = false;
 
   while (running) {
     if (WindowShouldClose()) {
@@ -119,6 +120,15 @@ restart:
 
     if (IsKeyPressed(KEY_SPACE)) {
       instant_drop = true;
+    }
+
+    if (IsKeyPressed(KEY_M)) {
+      muted = !muted;
+      if (muted) {
+        SetWindowTitle("🔈 "TITLE);
+      } else {
+        SetWindowTitle("🔊 "TITLE);
+      }
     }
 
     fall_faster = IsKeyDown(KEY_DOWN);
@@ -172,10 +182,13 @@ restart:
     double final_fall_speed =
         fall_faster ? fall_speed / SPEEDBOOST : fall_speed;
     if (now - last_fall_update > final_fall_speed || instant_drop) {
-      if (instant_drop)
-        PlaySound(sound_instant_drop);
-      else
-        PlaySound(sound_bwoop);
+      if (!muted) {
+        if (instant_drop)
+          PlaySound(sound_instant_drop);
+        else
+          PlaySound(sound_bwoop);
+      }
+
       last_fall_update = now;
 
       // Collision
